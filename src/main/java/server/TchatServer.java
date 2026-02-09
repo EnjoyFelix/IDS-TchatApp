@@ -42,7 +42,7 @@ public class TchatServer {
             registry.rebind(IdentityService.REGISTRATION_NAME, identityService);
             registry.rebind(MessageService.REGISTRATION_NAME, messageService);
         } catch (RemoteException rmE){
-            getLogger().log(Level.SEVERE, "Unable to register the services : %s", rmE.getMessage());
+            getLogger().log(Level.SEVERE, "Unable to register the services : %s".formatted(rmE.getMessage()));
             return false;
         }
         return true;

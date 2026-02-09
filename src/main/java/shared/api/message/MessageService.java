@@ -14,12 +14,10 @@ public interface MessageService extends Remote {
      * Allows a client to send a message
      * @param message the message to send
      * @param identity The user sending the message, to validate it
-     * @return The identifier of the message
      * @throws RemoteException Something went wrong with the distant machine
      */
-    int send(Message message, Identity identity) throws RemoteException;
+    void send(Message message, Identity identity) throws RemoteException;
 
-
-    void subscribe(final Identity identity, final SpaceSubscriber subscriber);
-    void unSubscribe(final Identity identity);
+    void subscribe(final Identity identity, final SpaceSubscriber subscriber) throws RemoteException;
+    void unSubscribe(final Identity identity) throws RemoteException;
 }

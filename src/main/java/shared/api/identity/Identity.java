@@ -1,3 +1,5 @@
 package shared.api.identity;
 
-public record Identity(String username, String token) {}
+import java.io.Serializable;
+
+public record Identity(String username, String token) implements Serializable {}

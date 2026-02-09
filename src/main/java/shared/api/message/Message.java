@@ -1,5 +1,6 @@
 package shared.api.message;
 
+import java.io.Serializable;
 import java.time.Instant;
 
-public record Message(Instant date, String message, long senderId, long spaceIdentifier){};
+public record Message(String username, String message, Instant date) implements Serializable {};

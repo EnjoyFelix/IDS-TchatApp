@@ -7,5 +7,12 @@ public interface IdentityService extends Remote {
     // The identifier used to register the instance
     static final String REGISTRATION_NAME = "IdentityService";
 
-    Identity login(final String username, final String password) throws RemoteException;;
+    /**
+     * Allows the user to login
+     * @param username The username of the user
+     * @param password The password of the user
+     * @return a new identity
+     * @throws RemoteException an exception
+     */
+    Identity login(final String username, final String password) throws RemoteException;
 }
