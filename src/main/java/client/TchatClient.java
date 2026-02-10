@@ -15,6 +15,7 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.time.Instant;
+import java.util.Scanner;
 
 public class TchatClient {
 
@@ -55,8 +56,26 @@ public class TchatClient {
             // register to the space
             messageService.subscribe(this.getIdentity(), this.getSpaceSubscriber());
 
-            // send a default message
-            messageService.send(new Message(this.getIdentity().username(), "Salut tout le monde !", Instant.now()), getIdentity());
+            Scanner scanner = new Scanner(System.in);
+
+            // send messages
+            System.out.println("You can start to write (/quit to leave)");
+            while(true){
+                String input = scanner.nextLine();
+
+                //quit
+                if(input.equalsIgnoreCase("/quit")){
+                    System.out.println("System leaving...");
+                    break;
+                }
+                // ignore empty message
+                if(input.isBlank()){
+                    continue;
+                }
+
+                //send message
+                messageService.send(new Message(this.getIdentity().username(), input, Instant.now()), getIdentity());
+            }
 
             // unsubscribe
             messageService.unSubscribe(identity);
