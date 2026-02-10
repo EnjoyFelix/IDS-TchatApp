@@ -95,7 +95,7 @@ public class TchatClient {
             messageService.subscribe(this.getIdentity(), this.getSpaceSubscriber());
 
             // send messages
-            System.out.println("You can start to write (/quit to leave) (/history to see history)");
+            System.out.println("You can start to write (/quit to leave)");
             while(true){
                 input = scanner.nextLine();
 
