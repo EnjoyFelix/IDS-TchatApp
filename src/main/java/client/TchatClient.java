@@ -43,8 +43,46 @@ public class TchatClient {
             final IdentityService identityService = (IdentityService) registry.lookup(IdentityService.REGISTRATION_NAME);
             final MessageService messageService = (MessageService) registry.lookup(MessageService.REGISTRATION_NAME);
 
+            Scanner scanner = new Scanner(System.in);
+
             // login
-            final Identity identity = identityService.login("Test", "Test");
+            String username = "";
+            String password = "";
+            String input;
+
+            while(username.isBlank()){
+                System.out.println("Have you an account ? y/n (/quit to leave)");
+                input = scanner.nextLine();
+
+                switch (input){
+                    case "y":
+                        System.out.println("Enter your username :");
+                        username = scanner.nextLine();
+                        System.out.println("Enter your password :");
+                        password = scanner.nextLine();
+
+                    case "n":
+                        System.out.println("===== Account creation : =====");
+                        System.out.println("Enter your username :");
+                        username = scanner.nextLine();
+                        System.out.println("Enter your password :");
+                        password = scanner.nextLine();
+
+                        //add user to usermap
+                        identityService.addUser(username, password);
+
+                    case "/quit":
+                        //TODO : how to exit correctly ?
+                        System.out.println("System exit...");
+                        return;
+
+                    default :
+                        System.out.println("Unknow command...");
+
+                }
+            }
+
+            final Identity identity = identityService.login(username, password);
             if (identity == null) {
                 System.out.println("Invalid credentials !");
                 return;
@@ -56,12 +94,10 @@ public class TchatClient {
             // register to the space
             messageService.subscribe(this.getIdentity(), this.getSpaceSubscriber());
 
-            Scanner scanner = new Scanner(System.in);
-
             // send messages
             System.out.println("You can start to write (/quit to leave)");
             while(true){
-                String input = scanner.nextLine();
+                input = scanner.nextLine();
 
                 //quit
                 if(input.equalsIgnoreCase("/quit")){

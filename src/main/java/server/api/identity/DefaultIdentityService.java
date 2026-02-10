@@ -44,6 +44,10 @@ public class DefaultIdentityService implements IdentityService {
         return new Identity(username, "");
     }
 
+    public void addUser(String username, String password){
+        accountsMap.put(username, cryptPassword(password));
+    }
+
     public String cryptPassword(final String clearPassword) {
         // FIXME : Passwords are in clear for test purposes
         return clearPassword;

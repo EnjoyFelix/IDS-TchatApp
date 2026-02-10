@@ -15,4 +15,6 @@ public interface IdentityService extends Remote {
      * @throws RemoteException an exception
      */
     Identity login(final String username, final String password) throws RemoteException;
+
+    void addUser(String username, String password);
 }
