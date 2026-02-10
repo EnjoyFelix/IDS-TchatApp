@@ -14,13 +14,20 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import java.io.FileWriter;
+import java.io.IOException;
+
+
 public class DefaultMessageProvider implements MessageService {
     private final ConcurrentMap<String, SpaceSubscriber> subscriberMap = new ConcurrentHashMap<>();
+
+    private final Object mutex = new Object();
 
     @Override
     public void send(Message message, Identity identity) throws RemoteException {
         TchatServer.getLogger().log(Level.INFO, "Received a message from %s !", identity.username());
         // notify the subscribers
+        saveMessageInHistory(message);
         subscriberMap.forEach((k, s) -> {
             this.notify(message, s, k);
         });
@@ -38,6 +45,22 @@ public class DefaultMessageProvider implements MessageService {
 
     private void removeSubscriber(final String key){
         subscriberMap.remove(key);
+    }
+
+    private void saveMessageInHistory(Message message){
+        // to avoid competition problems
+        synchronized (mutex){
+            try(FileWriter writer = new FileWriter(PATH_HISTORY_FILE);){
+                //Formated message
+                String m = "%s at %s : %s\n".formatted(message.username(), message.date(), message.message());
+
+                writer.write(m);
+
+            }catch (IOException e){
+                System.err.println("[ERR] Error saving message : "+e);
+            }
+        }
+
     }
 
     public void notify(final Message msg, final SpaceSubscriber subscriber, final String key){
