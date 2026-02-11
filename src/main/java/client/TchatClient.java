@@ -51,7 +51,7 @@ public class TchatClient {
             String input;
 
             while(username.isBlank()){
-                System.out.println("Have you an account ? y/n (/quit to leave)");
+                System.out.println("Do you have an account ? y/n (/quit to leave)");
                 input = scanner.nextLine();
 
                 switch (input){
@@ -60,6 +60,7 @@ public class TchatClient {
                         username = scanner.nextLine();
                         System.out.println("Enter your password :");
                         password = scanner.nextLine();
+                        break;
 
                     case "n":
                         System.out.println("===== Account creation : =====");
@@ -70,6 +71,7 @@ public class TchatClient {
 
                         //add user to usermap
                         identityService.addUser(username, password);
+                        break;
 
                     case "/quit":
                         //TODO : how to exit correctly ?
