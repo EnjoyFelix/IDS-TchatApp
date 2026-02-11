@@ -46,10 +46,10 @@ public class DefaultMessageProvider implements MessageService {
 
             while ((line = br.readLine()) != null) {
                 //Parse to create Message
-                String[] parse = line.split(":", 3);
+                String[] parse = line.split("~", 3);
 
                 if(parse.length == 3){
-                    subscriber.onMessage(new Message(parse[0], parse[1], Instant.parse(parse[2])));
+                    subscriber.onMessage(new Message(parse[0], parse[2], Instant.parse(parse[1])));
                 }
 
             }
@@ -69,10 +69,11 @@ public class DefaultMessageProvider implements MessageService {
 
     private void saveMessageInHistory(Message message){
         // to avoid competition problems
+        //FIXME : Write to the end of the file and do not overwrite the content
         synchronized (mutex){
             try(FileWriter writer = new FileWriter(PATH_HISTORY_FILE);){
                 //Formated message
-                String m = "%s:%s:%s\n".formatted(message.username(), message.date(), message.message());
+                String m = "%s~%s~%s\n".formatted(message.username(), message.date(), message.message());
 
                 writer.write(m);
 
