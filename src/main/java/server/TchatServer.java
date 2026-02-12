@@ -29,6 +29,7 @@ public class TchatServer {
     public void run() {
         // register the services
         if (!registerServices()) return;
+        System.out.println("Server is ready !");
     }
 
     private boolean registerServices() {

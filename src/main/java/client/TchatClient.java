@@ -14,7 +14,9 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.time.Instant;
+import java.util.Scanner;
 
 public class TchatClient {
 
@@ -42,8 +44,48 @@ public class TchatClient {
             final IdentityService identityService = (IdentityService) registry.lookup(IdentityService.REGISTRATION_NAME);
             final MessageService messageService = (MessageService) registry.lookup(MessageService.REGISTRATION_NAME);
 
+            Scanner scanner = new Scanner(System.in);
+
             // login
-            final Identity identity = identityService.login("Test", "Test");
+            String username = "";
+            String password = "";
+            String input;
+
+            while(username.isBlank()){
+                System.out.println("Do you have an account ? y/n (/quit to leave)");
+                input = scanner.nextLine();
+
+                switch (input){
+                    case "y":
+                        System.out.println("Enter your username :");
+                        username = scanner.nextLine();
+                        System.out.println("Enter your password :");
+                        password = scanner.nextLine();
+                        break;
+
+                    case "n":
+                        System.out.println("===== Account creation : =====");
+                        System.out.println("Enter your username :");
+                        username = scanner.nextLine();
+                        System.out.println("Enter your password :");
+                        password = scanner.nextLine();
+
+                        //add user to usermap
+                        identityService.addUser(username, password);
+                        break;
+
+                    case "/quit":
+                        //TODO : how to exit correctly ?
+                        System.out.println("System exit...");
+                        return;
+
+                    default :
+                        System.out.println("Unknow command...");
+
+                }
+            }
+
+            final Identity identity = identityService.login(username, password);
             if (identity == null) {
                 System.out.println("Invalid credentials !");
                 return;
@@ -53,13 +95,30 @@ public class TchatClient {
             System.out.printf("Successfully logged in with user %s !\n", identity.username());
 
             // register to the space
-            messageService.subscribe(this.getIdentity(), this.getSpaceSubscriber());
+            messageService.subscribe(this.getIdentity(), (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
 
-            // send a default message
-            messageService.send(new Message(this.getIdentity().username(), "Salut tout le monde !", Instant.now()), getIdentity());
+            // send messages
+            System.out.println("You can start to write (/quit to leave)");
+            while(true){
+                input = scanner.nextLine();
+
+                //quit
+                if(input.equalsIgnoreCase("/quit")){
+                    System.out.println("System leaving...");
+                    break;
+                }
+                // ignore empty message
+                if(input.isBlank()){
+                    continue;
+                }
+
+                //send message
+                messageService.send(new Message(this.getIdentity().username(), input, Instant.now()), getIdentity());
+            }
 
             // unsubscribe
             messageService.unSubscribe(identity);
+            UnicastRemoteObject.unexportObject(this.getSpaceSubscriber(), false);
         } catch (RemoteException | NotBoundException e) {
             throw new RuntimeException(e);
         }
