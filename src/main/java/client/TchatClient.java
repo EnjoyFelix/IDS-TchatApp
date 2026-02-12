@@ -14,6 +14,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.time.Instant;
 import java.util.Scanner;
 
@@ -94,7 +95,7 @@ public class TchatClient {
             System.out.printf("Successfully logged in with user %s !\n", identity.username());
 
             // register to the space
-            messageService.subscribe(this.getIdentity(), this.getSpaceSubscriber());
+            messageService.subscribe(this.getIdentity(), (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
 
             // send messages
             System.out.println("You can start to write (/quit to leave)");
@@ -117,6 +118,7 @@ public class TchatClient {
 
             // unsubscribe
             messageService.unSubscribe(identity);
+            UnicastRemoteObject.unexportObject(this.getSpaceSubscriber(), false);
         } catch (RemoteException | NotBoundException e) {
             throw new RuntimeException(e);
         }

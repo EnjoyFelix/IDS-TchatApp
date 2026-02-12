@@ -28,7 +28,7 @@ public class DefaultMessageProvider implements MessageService {
 
     @Override
     public void send(Message message, Identity identity) throws RemoteException {
-        TchatServer.getLogger().log(Level.INFO, "Received a message from %s !", identity.username());
+        TchatServer.getLogger().log(Level.INFO, "Received a message from %s !".formatted(identity.username()));
         // notify the subscribers
         saveMessageInHistory(message);
         subscriberMap.forEach((k, s) -> {
