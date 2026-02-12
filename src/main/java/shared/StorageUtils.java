@@ -6,6 +6,7 @@ import java.io.*;
  * The StorageUtils class our group used for our 1 year's COO Project
  */
 public final class StorageUtils {
+    public static final String DATAPATH = "./data";
 
     // This class is only for utils
     private StorageUtils() {}
@@ -39,4 +40,13 @@ public final class StorageUtils {
             return type.cast(obj);
         }
     }
+
+    /**
+     * Adds the path of the datapth to the given path
+     * @param path the path of the object inside the datapath
+     * @return a global path
+     */
+    public static String makeDataPath(final String path) {
+        return DATAPATH + "/" + path;
+    };
 }
