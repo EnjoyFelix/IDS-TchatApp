@@ -1,11 +1,13 @@
 package server.api.message;
 
 import server.TchatServer;
+import server.utils.AppendObjectOutputStream;
 import shared.api.identity.Identity;
 import shared.api.message.Message;
 import shared.api.message.MessageService;
 import shared.api.message.SpaceSubscriber;
 
+import java.io.*;
 import java.rmi.RemoteException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -14,11 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.FileReader;
 
 
 public class DefaultMessageProvider implements MessageService {
@@ -40,21 +37,19 @@ public class DefaultMessageProvider implements MessageService {
     public void subscribe(final Identity identity, final SpaceSubscriber subscriber) {
         this.subscriberMap.put(identity.username(), subscriber);
 
-        //Send history message to subscriber
-        try(BufferedReader br = new BufferedReader(new FileReader(PATH_HISTORY_FILE))){
-            String line;
+        //Load history
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PATH_HISTORY_FILE))) {
 
-            while ((line = br.readLine()) != null) {
-                //Parse to create Message
-                String[] parse = line.split("~", 3);
-
-                if(parse.length == 3){
-                    subscriber.onMessage(new Message(parse[0], parse[2], Instant.parse(parse[1])));
-                }
-
+            while (true) {
+                Message m = (Message) ois.readObject();
+                //Print to all subscriber
+                subscriber.onMessage(m);
             }
-        }catch(IOException e){
-            System.err.println("[ERR] Error read history : "+e);
+
+        } catch (EOFException e) {
+            // End of the file
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -67,21 +62,33 @@ public class DefaultMessageProvider implements MessageService {
         subscriberMap.remove(key);
     }
 
-    private void saveMessageInHistory(Message message){
-        // to avoid competition problems
-        synchronized (mutex){
-            try(FileWriter writer = new FileWriter(PATH_HISTORY_FILE, true);){
-                //Formated message
-                String m = "%s~%s~%s\n".formatted(message.username(), message.date(), message.message());
+    private void saveMessageInHistory(Message message) {
+        synchronized (mutex) {
+            try {
+                boolean fileExists = new File(PATH_HISTORY_FILE).exists();
 
-                writer.write(m);
+                FileOutputStream fos = new FileOutputStream(PATH_HISTORY_FILE, true);
 
-            }catch (IOException e){
-                System.err.println("[ERR] Error saving message : "+e);
+                ObjectOutputStream oos;
+
+                if (fileExists) {
+                    //Don't want header here
+                    oos = new AppendObjectOutputStream(fos);
+                } else {
+                    //File doesn't exist can put a header
+                    oos = new ObjectOutputStream(fos);
+                }
+
+                //Save message
+                oos.writeObject(message);
+                oos.close();
+
+            } catch (IOException e) {
+                System.err.println("[ERR] Error saving message: " + e);
             }
         }
-
     }
+
 
     public void notify(final Message msg, final SpaceSubscriber subscriber, final String key){
         try {
