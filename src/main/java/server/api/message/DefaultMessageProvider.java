@@ -69,9 +69,8 @@ public class DefaultMessageProvider implements MessageService {
 
     private void saveMessageInHistory(Message message){
         // to avoid competition problems
-        //FIXME : Write to the end of the file and do not overwrite the content
         synchronized (mutex){
-            try(FileWriter writer = new FileWriter(PATH_HISTORY_FILE);){
+            try(FileWriter writer = new FileWriter(PATH_HISTORY_FILE, true);){
                 //Formated message
                 String m = "%s~%s~%s\n".formatted(message.username(), message.date(), message.message());
 
