@@ -3,6 +3,7 @@ package server;
 import lombok.Getter;
 import server.api.identity.DefaultIdentityService;
 import server.api.message.DefaultMessageProvider;
+import shared.StorageUtils;
 import shared.api.identity.Identity;
 import shared.api.identity.IdentityService;
 import shared.api.message.MessageService;
