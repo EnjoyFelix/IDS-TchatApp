@@ -97,8 +97,12 @@ public class TchatClient {
             // register to the space
             messageService.subscribe(this.getIdentity(), (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
 
-            // send messages
-            System.out.println("You can start to write (/quit to leave)");
+            System.out.println("================= Tchat App =================");
+            System.out.println("You can now enter your messages.");
+            System.out.println("Available commands :");
+            System.out.println("</quit>        Exit Tchat App");
+            System.out.println("</history n>   Display the last n messages");
+            System.out.println("---------------------------------------------");
             while(true){
                 input = scanner.nextLine();
 
@@ -107,6 +111,24 @@ public class TchatClient {
                     System.out.println("System leaving...");
                     break;
                 }
+
+                if(input.startsWith("/history")){
+                    String[] parts = input.split(" ", 1);
+                    if(parts.length == 2){
+                        try{
+                            int n = Integer.parseInt(parts[1]);
+                            System.out.printf("============= Display %s messages =============\n", n);
+                            messageService.showHistory(n, (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
+                            System.out.println("==============================================");
+                        }catch(NumberFormatException e){
+                            System.out.println("[ERR] number not valid");
+                        }
+                    } else {
+                        System.out.println("Usage: /history <number>");
+                    }
+                    break;
+                }
+
                 // ignore empty message
                 if(input.isBlank()){
                     continue;

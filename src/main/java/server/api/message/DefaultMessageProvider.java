@@ -10,7 +10,9 @@ import shared.api.message.SpaceSubscriber;
 import java.io.*;
 import java.rmi.RemoteException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,21 +38,6 @@ public class DefaultMessageProvider implements MessageService {
     @Override
     public void subscribe(final Identity identity, final SpaceSubscriber subscriber) {
         this.subscriberMap.put(identity.username(), subscriber);
-
-        //Load history
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PATH_HISTORY_FILE))) {
-
-            while (true) {
-                Message m = (Message) ois.readObject();
-                //Print to all subscriber
-                subscriber.onMessage(m);
-            }
-
-        } catch (EOFException e) {
-            // End of the file
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -100,4 +87,25 @@ public class DefaultMessageProvider implements MessageService {
             this.removeSubscriber(key);
         }
     }
+
+    public void showHistory(int number, SpaceSubscriber subscriber) throws RemoteException {
+        List<Message> messages = new ArrayList<>();
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PATH_HISTORY_FILE))) {
+            while (true) {
+                //load all messages in list
+                Message m = (Message) ois.readObject();
+                messages.add(m);
+            }
+        } catch (EOFException e) {
+            // End of the file
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        int start = Math.max(messages.size()-number, 0);
+        for(int i = start; i<messages.size(); i++){
+            subscriber.onMessage(messages.get(i));
+        }
+    }
+
 }

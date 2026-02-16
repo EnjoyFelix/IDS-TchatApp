@@ -21,4 +21,5 @@ public interface MessageService extends Remote {
 
     void subscribe(final Identity identity, final SpaceSubscriber subscriber) throws RemoteException;
     void unSubscribe(final Identity identity) throws RemoteException;
+    void showHistory(int number, SpaceSubscriber identity) throws RemoteException;
 }
