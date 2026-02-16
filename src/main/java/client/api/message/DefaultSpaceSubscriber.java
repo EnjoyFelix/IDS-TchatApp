@@ -15,7 +15,30 @@ public class DefaultSpaceSubscriber implements SpaceSubscriber {
         System.out.printf(formatted);
     }
 
-    private String formatMessage(final Message message) {
+
+    @Override
+    public void onConnect(final String username) throws RemoteException {
+        // format and print the message
+        final String formatted = formatConnectionMessage(username);
+        System.out.println(formatted);
+    }
+
+    @Override
+    public void onDisconnect(final String username) throws RemoteException {
+        // format and print the message
+        final String formatted = formatDisconnectMessage(username);
+        System.out.println(formatted);
+    }
+
+    private static String formatMessage(final Message message) {
         return "%s at %s : %s\n".formatted(message.username(), message.date(), message.message());
+    }
+
+    private static String formatConnectionMessage(final String username){
+        return "(+) %s".formatted(username);
+    }
+
+    private static String formatDisconnectMessage(final String username){
+        return "(-) %s".formatted(username);
     }
 }
