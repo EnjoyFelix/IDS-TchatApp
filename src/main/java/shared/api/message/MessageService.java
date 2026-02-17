@@ -4,12 +4,10 @@ import shared.api.identity.Identity;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.PriorityQueue;
 
 public interface MessageService extends Remote {
     // The identifier used to register the instance
     static final String REGISTRATION_NAME = "MessageService";
-    static final String PATH_HISTORY_FILE = "./history.ser";
 
     /**
      * Allows a client to send a message
@@ -19,7 +17,7 @@ public interface MessageService extends Remote {
      */
     void send(Message message, Identity identity) throws RemoteException;
 
-    void subscribe(final Identity identity, final SpaceSubscriber subscriber) throws RemoteException;
+    void subscribe(final Identity identity, final NotificationSubscriber subscriber) throws RemoteException;
     void unSubscribe(final Identity identity) throws RemoteException;
-    void showHistory(int number, SpaceSubscriber identity) throws RemoteException;
+    void showHistory(int number, final Identity identity) throws RemoteException;
 }

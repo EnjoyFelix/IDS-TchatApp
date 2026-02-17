@@ -1,13 +1,15 @@
 package client.api.message;
 
 import shared.api.message.Message;
-import shared.api.message.SpaceSubscriber;
+import shared.api.message.NotificationSubscriber;
 
 import java.rmi.RemoteException;
+import java.text.DateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.util.Collection;
 
-public class DefaultSpaceSubscriber implements SpaceSubscriber {
-
-
+public class DefaultNotificationSubscriber implements NotificationSubscriber {
     @Override
     public void onMessage(final Message message) throws RemoteException {
         // format and print the message
@@ -28,6 +30,19 @@ public class DefaultSpaceSubscriber implements SpaceSubscriber {
         // format and print the message
         final String formatted = formatDisconnectMessage(username);
         System.out.println(formatted);
+    }
+
+    @Override
+    public void onHistoryResult(final Collection<Message> messages) throws RemoteException {
+        // Format the text
+        final StringBuilder builder = new StringBuilder("The first %d messages :\n".formatted(messages.size()));
+        messages.forEach(m -> {
+            builder.append("- ");
+            builder.append(formatMessage(m));
+        });
+
+        // print it
+        System.out.println(builder);
     }
 
     private static String formatMessage(final Message message) {

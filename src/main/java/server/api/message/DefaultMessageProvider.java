@@ -2,24 +2,22 @@ package server.api.message;
 
 import server.TchatServer;
 import server.utils.AppendObjectOutputStream;
+import shared.StorageUtils;
 import shared.api.identity.Identity;
 import shared.api.message.Message;
 import shared.api.message.MessageService;
-import shared.api.message.SpaceSubscriber;
+import shared.api.message.NotificationSubscriber;
 
 import java.io.*;
 import java.rmi.RemoteException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -27,9 +25,11 @@ import java.util.logging.Logger;
 
 
 public class DefaultMessageProvider implements MessageService {
-    private final ConcurrentMap<String, SpaceSubscriber> subscriberMap = new ConcurrentHashMap<>();
+    private static final String HISTORY_FILENAME = "history.ser";
 
-    private final Object mutex = new Object();
+    // Map of the Connected User's username and their "messenger"
+    private final ConcurrentMap<String, NotificationSubscriber> subscriberMap = new ConcurrentHashMap<>();
+    private final Object mutex = new Object();  //
 
     @Override
     public void send(Message message, Identity identity) throws RemoteException {
@@ -43,7 +43,7 @@ public class DefaultMessageProvider implements MessageService {
         var iterator = subscriberMap.entrySet().iterator();
         synchronized (subscriberMap) {
             while (iterator.hasNext()) {
-                final Map.Entry<String, SpaceSubscriber> value = iterator.next();
+                final Map.Entry<String, NotificationSubscriber> value = iterator.next();
                 // filter out the sender
                 final String username = value.getKey();
                 if (username.equals(identity.username())) continue;
@@ -55,7 +55,7 @@ public class DefaultMessageProvider implements MessageService {
     }
 
     @Override
-    public void subscribe(final Identity identity, final SpaceSubscriber subscriber) {
+    public void subscribe(final Identity identity, final NotificationSubscriber subscriber) {
         final Logger logger = TchatServer.getLogger();
         logger.log(Level.INFO, "New subscriber : %s !".formatted(identity.username()));
 
@@ -63,7 +63,8 @@ public class DefaultMessageProvider implements MessageService {
         this.subscriberMap.put(identity.username(), subscriber);
 
         //Send history message to subscriber
-        try(BufferedReader br = new BufferedReader(new FileReader(PATH_HISTORY_FILE))){
+        final String datapath = getFullDatapath();
+        try(BufferedReader br = new BufferedReader(new FileReader(datapath))){
             String line;
 
             while ((line = br.readLine()) != null) {
@@ -96,11 +97,13 @@ public class DefaultMessageProvider implements MessageService {
     }
 
     private void saveMessageInHistory(Message message) {
+        final Logger logger = TchatServer.getLogger();
         synchronized (mutex) {
+            final String datapath = getFullDatapath();
             try {
-                boolean fileExists = new File(PATH_HISTORY_FILE).exists();
+                boolean fileExists = new File(datapath).exists();
 
-                FileOutputStream fos = new FileOutputStream(PATH_HISTORY_FILE, true);
+                FileOutputStream fos = new FileOutputStream(datapath, true);
 
                 ObjectOutputStream oos;
 
@@ -117,7 +120,7 @@ public class DefaultMessageProvider implements MessageService {
                 oos.close();
 
             } catch (IOException e) {
-                System.err.println("[ERR] Error saving message: " + e);
+                logger.log(Level.WARNING, "[ERR] Error saving message: " + e);
             }
         }
     }
@@ -128,7 +131,7 @@ public class DefaultMessageProvider implements MessageService {
      * @param subscriber The subscriber to notify
      * @param key The username of the currentSubscriber
      */
-    private void sendMessage(final Message msg, final SpaceSubscriber subscriber, final String key){
+    private void sendMessage(final Message msg, final NotificationSubscriber subscriber, final String key){
         try {
             // notify the receiver
             subscriber.onMessage(msg);
@@ -139,7 +142,7 @@ public class DefaultMessageProvider implements MessageService {
         }
     }
 
-    private void sendConnectionNotification(final String newUser, final SpaceSubscriber subscriber, final String key){
+    private void sendConnectionNotification(final String newUser, final NotificationSubscriber subscriber, final String key){
         try {
             // notify the receiver
             subscriber.onConnect(newUser);
@@ -150,7 +153,7 @@ public class DefaultMessageProvider implements MessageService {
         }
     }
 
-    private void sendDisconnectNotification(final String oldUser, final SpaceSubscriber subscriber, final String key){
+    private void sendDisconnectNotification(final String oldUser, final NotificationSubscriber subscriber, final String key){
         try {
             // notify the receiver
             subscriber.onDisconnect(oldUser);
@@ -161,13 +164,22 @@ public class DefaultMessageProvider implements MessageService {
         }
     }
 
-    public void showHistory(int number, SpaceSubscriber subscriber) throws RemoteException {
-        List<Message> messages = new ArrayList<>();
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PATH_HISTORY_FILE))) {
-            while (true) {
-                //load all messages in list
-                Message m = (Message) ois.readObject();
+    public void showHistory(int number, final Identity identity) throws RemoteException {
+        // get the subscriber
+        final NotificationSubscriber subscriber = subscriberMap.get(identity.username());
+        if (subscriber == null) return;
+
+        // init the list
+        final List<Message> messages = new ArrayList<>();
+
+        // read n messages
+        final String datapath = getFullDatapath();
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(datapath))) {
+            // read until null or n was reached
+            Message m; int i = 0;
+            while (i < number && (m = (Message) ois.readObject()) != null) {
                 messages.add(m);
+                i++;
             }
         } catch (EOFException e) {
             // End of the file
@@ -175,10 +187,10 @@ public class DefaultMessageProvider implements MessageService {
             e.printStackTrace();
         }
 
-        int start = Math.max(messages.size()-number, 0);
-        for(int i = start; i<messages.size(); i++){
-            subscriber.onMessage(messages.get(i));
-        }
+        subscriber.onHistoryResult(messages);
     }
 
+    private static String getFullDatapath() {
+        return StorageUtils.makeDataPath(DefaultMessageProvider.HISTORY_FILENAME);
+    }
 }

@@ -1,13 +1,13 @@
 package client;
 
-import client.api.message.DefaultSpaceSubscriber;
+import client.api.message.DefaultNotificationSubscriber;
 import lombok.Getter;
 import lombok.Setter;
 import shared.api.identity.Identity;
 import shared.api.identity.IdentityService;
 import shared.api.message.Message;
 import shared.api.message.MessageService;
-import shared.api.message.SpaceSubscriber;
+import shared.api.message.NotificationSubscriber;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -23,16 +23,15 @@ public class TchatClient {
     private final int port;
 
     @Getter
-    private final SpaceSubscriber spaceSubscriber;
+    private final NotificationSubscriber notificationSubscriber;
 
     @Getter @Setter
     private Identity identity;
     TchatClient(final String host, final int port){
         this.port = port;
         this.host = host;
-        this.spaceSubscriber = new DefaultSpaceSubscriber();
+        this.notificationSubscriber = new DefaultNotificationSubscriber();
     }
-
 
     public void run() {
         // connect to the server
@@ -53,7 +52,7 @@ public class TchatClient {
             System.out.printf("Successfully logged in with user %s !\n", identity.username());
 
             // register to the space
-            messageService.subscribe(this.getIdentity(), (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
+            messageService.subscribe(this.getIdentity(), (NotificationSubscriber) UnicastRemoteObject.exportObject(this.getNotificationSubscriber(), 0));
 
             System.out.println("================= Tchat App =================");
             System.out.println("You can now enter your messages.");
@@ -68,7 +67,7 @@ public class TchatClient {
 
             // unsubscribe
             messageService.unSubscribe(identity);
-            UnicastRemoteObject.unexportObject(this.getSpaceSubscriber(), false);
+            UnicastRemoteObject.unexportObject(this.getNotificationSubscriber(), false);
         } catch (RemoteException | NotBoundException e) {
             throw new RuntimeException(e);
         }
@@ -96,20 +95,8 @@ public class TchatClient {
             }
 
             if(input.startsWith("/history")){
-                String[] parts = input.split(" ", 1);
-                if(parts.length == 2){
-                    try{
-                        int n = Integer.parseInt(parts[1]);
-                        System.out.printf("============= Display %s messages =============\n", n);
-                        messageService.showHistory(n, (SpaceSubscriber) UnicastRemoteObject.exportObject(this.getSpaceSubscriber(), 0));
-                        System.out.println("==============================================");
-                    }catch(NumberFormatException e){
-                        System.out.println("[ERR] number not valid");
-                    }
-                } else {
-                    System.out.println("Usage: /history <number>");
-                }
-                break;
+                doHistoryCommand(input, messageService);
+                continue;
             }
 
             // ignore empty message
@@ -182,7 +169,27 @@ public class TchatClient {
         return identity;
     }
 
+    private void doHistoryCommand(final String input, final MessageService messageService) throws RemoteException{
+        // split the command into it's args
+        final String[] parts = input.split(" ");
+        if(parts.length != 2){
+            System.out.println("Usage: /history <number>");
+            return;
+        }
 
+        // parse n and check for errors
+        int n;
+        try{
+            n = Integer.parseInt(parts[1]);
+            if (n <= 0) throw new NumberFormatException();
+        }catch(NumberFormatException e){
+            System.out.println("Error > n must be a positive integer !");
+            return;
+        }
+
+        // request the messages
+        messageService.showHistory(n, this.getIdentity());
+    }
     public static void main(String[] args) {
         // check the number of args
         if (args.length < 2){
