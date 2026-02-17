@@ -9,7 +9,7 @@ import java.util.PriorityQueue;
 public interface MessageService extends Remote {
     // The identifier used to register the instance
     static final String REGISTRATION_NAME = "MessageService";
-    static final String PATH_HISTORY_FILE = "./history.txt";
+    static final String PATH_HISTORY_FILE = "./history.ser";
 
     /**
      * Allows a client to send a message
@@ -21,4 +21,5 @@ public interface MessageService extends Remote {
 
     void subscribe(final Identity identity, final SpaceSubscriber subscriber) throws RemoteException;
     void unSubscribe(final Identity identity) throws RemoteException;
+    void showHistory(int number, SpaceSubscriber identity) throws RemoteException;
 }
