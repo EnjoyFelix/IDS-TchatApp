@@ -8,6 +8,9 @@ import shared.api.identity.Identity;
 import shared.api.identity.IdentityService;
 import shared.api.message.MessageService;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -28,12 +31,28 @@ public class TchatServer {
     }
 
     public void run() {
+        // create the datafolder
+        createDataFolder();
+
         // register the services
-        if (!registerServices()) return;
-        System.out.println("Server is ready !");
+        registerServices();
+        System.out.println("The server is running !");
     }
 
-    private boolean registerServices() {
+    private void createDataFolder(){
+        // does the folder exist ?
+        final Path dataFolderPath = Path.of(StorageUtils.makeDataPath(""));
+        if (Files.exists(dataFolderPath)) return;
+
+        // create the folder
+        try {
+            Files.createDirectory(dataFolderPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void registerServices() {
         try {
             // create the sharde objects
             IdentityService identityService = (IdentityService) UnicastRemoteObject.exportObject(this.getIdentityService(), 0);
@@ -45,9 +64,8 @@ public class TchatServer {
             registry.rebind(MessageService.REGISTRATION_NAME, messageService);
         } catch (RemoteException rmE){
             getLogger().log(Level.SEVERE, "Unable to register the services : %s".formatted(rmE.getMessage()));
-            return false;
+            throw new RuntimeException(rmE);
         }
-        return true;
     };
 
     public Registry getRegistry() throws RemoteException {
