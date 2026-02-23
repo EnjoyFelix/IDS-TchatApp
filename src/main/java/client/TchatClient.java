@@ -1,8 +1,6 @@
 package client;
 
 import client.api.message.DefaultNotificationSubscriber;
-import lombok.Getter;
-import lombok.Setter;
 import shared.api.identity.Identity;
 import shared.api.identity.IdentityService;
 import shared.api.message.Message;
@@ -22,10 +20,20 @@ public class TchatClient {
     private final String host;
     private final int port;
 
-    @Getter
+    public Identity getIdentity() {
+        return identity;
+    }
+
+    public NotificationSubscriber getNotificationSubscriber() {
+        return notificationSubscriber;
+    }
+
     private final NotificationSubscriber notificationSubscriber;
 
-    @Getter @Setter
+    public void setIdentity(Identity identity) {
+        this.identity = identity;
+    }
+
     private Identity identity;
     TchatClient(final String host, final int port){
         this.port = port;

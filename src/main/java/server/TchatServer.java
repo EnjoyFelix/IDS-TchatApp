@@ -1,6 +1,5 @@
 package server;
 
-import lombok.Getter;
 import server.api.identity.DefaultIdentityService;
 import server.api.message.DefaultMessageProvider;
 import shared.StorageUtils;
@@ -20,9 +19,16 @@ import java.util.logging.Logger;
 
 public class TchatServer {
     // Service Instances, should only be accessed using the functions
-    @Getter
     private IdentityService identityService = new DefaultIdentityService();
-    @Getter
+
+    public MessageService getMessageService() {
+        return messageService;
+    }
+
+    public IdentityService getIdentityService() {
+        return identityService;
+    }
+
     private MessageService messageService = new DefaultMessageProvider();
 
     private final int port;
